@@ -1,86 +1,28 @@
-// Status.js
-import React from "react";
-import { View, Text, Platform, StatusBar, StyleSheet } from "react-native";
-import Constants from "expo-constants";
-import NetInfo from "@react-native-community/netinfo"; // Core API for network info
+// components/status.js
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 
-export default class Status extends React.Component {
-  state = {
-    info: "none", // initial network state
-  };
+export default function StatusComponent() {
+  const [isConnected, setIsConnected] = useState(true);
 
-  componentDidMount() {
-    // Get initial connection info
-    NetInfo.fetch().then((state) => {
-      this.setState({ info: state.type }); // 'wifi', 'cellular', or 'none'
-    });
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => setIsConnected(state.isConnected));
+    return () => unsubscribe();
+  }, []);
 
-    // Subscribe to connection changes
-    this.unsubscribe = NetInfo.addEventListener((state) => {
-      this.setState({ info: state.type });
-    });
-  }
-
-  componentWillUnmount() {
-    // Remove listener to prevent memory leaks
-    if (this.unsubscribe) this.unsubscribe();
-  }
-
-  render() {
-    const { info } = this.state;
-    const isConnected = info !== "none";
-    const backgroundColor = isConnected ? "white" : "red";
-
-    const statusBar = (
+  return (
+    <View style={[styles.container, { backgroundColor: isConnected ? '#4CAF50' : '#F44336' }]}>
       <StatusBar
-        backgroundColor={backgroundColor}
-        barStyle={isConnected ? "dark-content" : "light-content"}
-        animated={false}
+        barStyle="light-content"
+        backgroundColor={isConnected ? '#4CAF50' : '#F44336'}
       />
-    );
-
-    const messageContainer = (
-      <View style={styles.messageContainer} pointerEvents={"none"}>
-        {statusBar}
-        {!isConnected && (
-          <View style={styles.bubble}>
-            <Text style={styles.text}>No network connection</Text>
-          </View>
-        )}
-      </View>
-    );
-
-    if (Platform.OS === "ios") {
-      return <View style={[styles.status, { backgroundColor }]}>{messageContainer}</View>;
-    }
-
-    return messageContainer;
-  }
+      <Text style={styles.text}>{isConnected ? 'Online' : 'Offline'}</Text>
+    </View>
+  );
 }
 
-const statusHeight = Platform.OS === "ios" ? Constants.statusBarHeight : 0;
-
 const styles = StyleSheet.create({
-  status: {
-    zIndex: 1,
-    height: statusHeight + 80, // accommodate message bubble
-  },
-  messageContainer: {
-    zIndex: 1,
-    position: "absolute",
-    top: statusHeight + 20,
-    left: 0,
-    right: 0,
-    height: 80,
-    alignItems: "center",
-  },
-  bubble: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "red",
-  },
-  text: {
-    color: "white",
-  },
+  container: { width: '100%', padding: 10, alignItems: 'center' },
+  text: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 });
